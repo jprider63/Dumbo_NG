@@ -329,8 +329,6 @@ def speedmvba(sid, pid, N, f, PK, SK, PK2s, SK2, input, decide, receive, send, p
 
                 nonlocal hasOutputed, r
 
-                okay_to_stop.clear()
-
                 hasVoted = False
                 while not hasOutputed and not okay_to_stop.is_set() and not start_wait_for_halt.is_set():
                     # gevent.sleep(0)
@@ -484,6 +482,11 @@ def speedmvba(sid, pid, N, f, PK, SK, PK2s, SK2, input, decide, receive, send, p
                         #traceback.print_exc(e)
                         continue
 
+            # Clear the previous view's stop signal before waiting on it: vote_loop only
+            # runs once this greenlet yields, so clearing it there let wait() return
+            # immediately and start a duplicate set of SPBCs for the same view.
+            if not start_wait_for_halt.is_set():
+                okay_to_stop.clear()
             gevent.spawn(vote_loop)
             okay_to_stop.wait()
 
